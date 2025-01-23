@@ -51,6 +51,11 @@ class DataInfo:
         print('=='*20 + f'\nCategorical Columns\n' + '=='*20)
         print(categorical_cols, end="\n\n")
 
+        # Data type info
+        print('=='*20 + f'\nData Summary\n' + '=='*20 )
+        data_summary = df.info() 
+        print('=='*20 +'\n')
+
         # Descriptive statistics
         describe =  df.describe() 
         print('=='*20 + f'\nDescriptive Statistics\n' + '=='*20  )
@@ -58,9 +63,10 @@ class DataInfo:
         
         #Display the dataset
         # Adjust display options to show all columns
-        pd.set_option('display.max_columns', None)
+        # pd.set_option('display.max_columns', None)
         print('=='*20 + f'\nDataset Overview\n'+ '=='*20 )
-        return df.head()
+        return display(df.head())
+        
 class DataChecks:
     """Class to Perform various checks on the dataset"""
     def __init__(self, df):
@@ -112,44 +118,19 @@ class DataChecks:
         """
         Identify Null values in the dataset as value counts and percentages.
         """
-        # Get features with null values
-        null_features = self.df.columns[self.df.isnull().any()].tolist()
+        null_counts = self.df.isnull().sum()
+
+        display(null_counts)
         
-        if null_features:
-            # Calculate the number of missing values for each feature
-            null_counts = self.df[null_features].isnull().sum()
-            
-            # Calculate the percentage of missing data for each feature
-            null_percentages = self.df[null_features].isnull().mean() * 100
-            
-            # Create a DataFrame to display the results
-            self.null_info = pd.DataFrame({
-                'Column Names': null_features,
-                'Missing Values': null_counts,
-                'Percentage Missing': null_percentages
-            }).reset_index(drop=True)
-            
-            # Display the results
-            display(self.null_info)
-        else:
-            self.null_info = None
-            print("NO NULL VALUES FOUND") 
 
-    def drop_missing(self, threshold=30):
+    def drop_specified_columns(self, columns):
         """
-        Drop columns with more than `threshold` percent missing values.
+        Drop specified columns from the DataFrame.
         """
-        if self.null_info is None:
-            print("No missing value analysis found. Please run `check_missing` first.")
-        else:
-            # Identify columns to drop based on the threshold
-            columns_to_drop = self.null_info[
-                self.null_info['Percentage Missing'] > threshold
-            ]['Column Names'].tolist()
+        print(f"Dropping missing values in columns: {columns}")
+        self.df.dropna(subset=columns, inplace=True)
 
-            if columns_to_drop:
-                print(f"Dropping columns with more than {threshold}% missing values: {columns_to_drop}")
-                self.df.drop(columns=columns_to_drop, inplace=True)
-            else:
-                print(f"No columns found with more than {threshold}% missing values.")
+        display(self.df.isna().sum())
+
         return self.df
+
