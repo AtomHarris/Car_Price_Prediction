@@ -1,7 +1,8 @@
 import os
 import numpy as np
 import pandas as pd
-
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 class DataLoading:
     def __init__(self):
@@ -133,4 +134,86 @@ class DataChecks:
         display(self.df.isna().sum())
 
         return self.df
+    
+    def check_outliers_and_plot(self):
+        """
+        Detect outliers in numerical columns using the IQR method and plot boxplots.
+        """
+        
+
+        outlier_columns = []
+
+        for column in self.numerical_columns:
+            Q1 = self.df[column].quantile(0.25)
+            Q3 = self.df[column].quantile(0.75)
+            IQR = Q3 - Q1
+            lower_bound = Q1 - 1.5 * IQR
+            upper_bound = Q3 + 1.5 * IQR
+
+            # Find outliers
+            outlier_indices = self.df[(self.df[column] < lower_bound) | (self.df[column] > upper_bound)].index.tolist()
+
+            if outlier_indices: 
+                outlier_columns.append(column)
+
+        print("***********************************************")
+        print("Columns Containing Outliers Include:", outlier_columns)
+        print("***********************************************")
+
+        if outlier_columns:
+            # Plot boxplots for columns with outliers
+            num_rows = (len(outlier_columns) + 2) // 3
+            num_cols = min(len(outlier_columns), 3)
+            fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, figsize=(20, 8))
+
+            # Ensure axes is always iterable
+            if len(outlier_columns) == 1:
+                axes = [axes]  # Make axes a list to allow consistent indexing
+            else:
+                axes = axes.flatten() if num_rows > 1 else axes
+
+            for i, column in enumerate(outlier_columns):
+                sns.boxplot(x=self.df[column], ax=axes[i])
+                axes[i].set_xlabel(column)
+                axes[i].set_ylabel('Values')
+                axes[i].set_title(f'{column}')
+                axes[i].tick_params(axis='x', rotation=45)
+
+            # Remove any unused subplots
+            if len(outlier_columns) < len(axes):
+                for j in range(len(outlier_columns), len(axes)):
+                    fig.delaxes(axes[j])
+
+            # Adjust layout to prevent overlapping
+            plt.tight_layout()
+            plt.show()
+        else:
+            print("NO OUTLIERS FOUND")
+
+    def convert_typing(self, convert_dict):
+        # Iterate over the dictionary to convert columns
+        for column_name, target_type in convert_dict.items():
+            if target_type == 'datetime':  # Check for datetime conversion
+                self.df[column_name] = pd.to_datetime(self.df[column_name])
+                print(f"Column '{column_name}' has been successfully converted to datetime.")
+            
+            elif target_type == 'object':  # Check for object (string) conversion
+                self.df[column_name] = self.df[column_name].astype("object")
+                print(f"Column '{column_name}' has been successfully converted to object.")
+            
+            elif target_type == 'int':  # Check for integer conversion
+                self.df[column_name] = self.df[column_name].astype("int64")
+                print(f"Column '{column_name}' has been successfully converted to int64.")
+            
+            elif target_type == 'float':  # Check for float conversion
+                self.df[column_name] = self.df[column_name].astype("float64")
+                print(f"Column '{column_name}' has been successfully converted to float64.")
+            
+            else:
+                print(f"Unsupported type '{target_type}' for column '{column_name}'.")
+
+        # Return the updated DataFrame
+        return self.df
+    
+
 
