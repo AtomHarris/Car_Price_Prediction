@@ -190,30 +190,70 @@ class DataChecks:
         else:
             print("NO OUTLIERS FOUND")
 
-    def convert_typing(self, convert_dict):
-        # Iterate over the dictionary to convert columns
-        for column_name, target_type in convert_dict.items():
-            if target_type == 'datetime':  # Check for datetime conversion
-                self.df[column_name] = pd.to_datetime(self.df[column_name])
-                print(f"Column '{column_name}' has been successfully converted to datetime.")
-            
-            elif target_type == 'object':  # Check for object (string) conversion
-                self.df[column_name] = self.df[column_name].astype("object")
-                print(f"Column '{column_name}' has been successfully converted to object.")
-            
-            elif target_type == 'int':  # Check for integer conversion
-                self.df[column_name] = self.df[column_name].astype("int64")
-                print(f"Column '{column_name}' has been successfully converted to int64.")
-            
-            elif target_type == 'float':  # Check for float conversion
-                self.df[column_name] = self.df[column_name].astype("float64")
-                print(f"Column '{column_name}' has been successfully converted to float64.")
-            
-            else:
-                print(f"Unsupported type '{target_type}' for column '{column_name}'.")
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
 
-        # Return the updated DataFrame
-        return self.df
+class EDA:
+    """Class to Perform EDA on the dataset."""
+    col_list = ['brand', 'year', 'price_in_kes', 'made_in_group', 'body_type_group', 
+                'grouped_seating_capacity', 'fuel_type_grouped', 'transmission_group', 'drive_type_group']
+
+    def __init__(self):
+        pass
     
+    def plot_univariate(self, data, column):
+        """Plots univariate analysis for a given column using Seaborn."""
+        plt.figure(figsize=(8, 5))
+        
+        if data[column].dtype == 'object':  # Categorical
+            if data[column].nunique() <= 10:  # Few unique categories
+                sns.countplot(x=column, data=data, order=data[column].value_counts().index, hue=column, palette="viridis")
+                plt.xticks(rotation=30)
+                plt.title(f"Distribution of {column.title()}")
+            else:  # More than 10 unique categories
+                top_10_categories = data[column].value_counts().nlargest(10).index
+                filtered_data = data[data[column].isin(top_10_categories)]
+                sns.countplot(x=column, data=filtered_data, order=top_10_categories, hue=column, palette="viridis")
+                plt.xticks(rotation=30)
+                plt.title(f"Top 10 Categories in {column.title()}")
+        else:  # Numerical
+            sns.histplot(data[column], kde=True, color="blue")
+            plt.title(f"Distribution of {column.title()}")
+            plt.xlabel(column)
+            plt.ylabel("Frequency")
+        
+        plt.tight_layout()
+        plt.show()
 
+    def plot_bivariate(self, data, column, target):
+        """Plots bivariate analysis for a given column against the target variable."""
+        
+        # Ensure we're not plotting the target against itself
+        if column == target:
+            # print(f"Skipping: {column} is the target variable.")
+            return
+        
+        plt.figure(figsize=(8, 5))
 
+        if data[column].dtype == 'object':  # Categorical
+            if data[column].nunique() < 10:  # Few unique categories
+                sns.boxplot(x=column, y=target, data=data, order=data[column].value_counts(ascending=False).index)
+                plt.xticks(rotation=45)
+                plt.title(f"{target} vs. {column.title()}")
+            else:  # More than 10 unique categories
+                top_10_categories = data[column].value_counts().nlargest(10).index
+                filtered_data = data[data[column].isin(top_10_categories)]
+                sns.boxplot(x=column, y=target, data=filtered_data, order=top_10_categories)
+                plt.xticks(rotation=30)
+                plt.title(f"{target} vs. {column.title()} (Top 10 Categories)")
+        else:  # Numerical
+            sns.scatterplot(x=column, y=target, data=data)
+            plt.title(f"{target} vs. {column.title()}")
+
+        plt.tight_layout()
+        plt.show()
+
+    
+    
+    
